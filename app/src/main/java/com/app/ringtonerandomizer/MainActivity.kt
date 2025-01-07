@@ -1,0 +1,163 @@
+package com.app.ringtonerandomizer
+
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.IntentFilter
+import android.os.Build
+import android.os.Bundle
+import android.telephony.TelephonyManager
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.app.ringtonerandomizer.core.data.features.IncomingCallReceiver
+import com.app.ringtonerandomizer.core.presentation.BottomNavBar
+import com.app.ringtonerandomizer.core.presentation.doToast
+import com.app.ringtonerandomizer.navigation.Screen
+import com.app.ringtonerandomizer.navigation.Tab
+import com.app.ringtonerandomizer.navigation.nav_graph.aboutScreen
+import com.app.ringtonerandomizer.navigation.nav_graph.homeScreen
+import com.app.ringtonerandomizer.presentation.home_screen.RingtoneListViewModel
+import com.app.ringtonerandomizer.ui.theme.RingtoneRandomizerTheme
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+
+@OptIn(ExperimentalPermissionsApi::class)
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+@SuppressLint("BatteryLife")
+class MainActivity : ComponentActivity() {
+    lateinit var callReceiver: IncomingCallReceiver
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                Color.Transparent.toArgb(), Color.Transparent.toArgb()
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
+                Color.Transparent.toArgb(), Color.Transparent.toArgb()
+            )
+        )
+
+        callReceiver = IncomingCallReceiver()
+        val intentFilter = IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
+        registerReceiver(callReceiver, intentFilter)
+
+        setContent {
+            val context = LocalContext.current
+            val snackBarHostState = remember { SnackbarHostState() }
+
+            val ringtoneListViewModel = RingtoneListViewModel(context)
+            ringtoneListViewModel.intentSenderLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartIntentSenderForResult()
+            ) {
+                if (it.resultCode == RESULT_OK) {
+                    doToast(context, "deleted successfully")
+                } else {
+                    doToast(context, "Failed to delete")
+                }
+            }
+
+            val navController = rememberNavController()
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val isBottomNavBarVisible = rememberSaveable(navBackStackEntry) {
+                navBackStackEntry?.destination?.route == Screen.HomeScreen.route ||
+                        navBackStackEntry?.destination?.route == Screen.AboutScreen.route
+            }
+
+            val permissionState = rememberMultiplePermissionsState(
+                permissions = listOf(
+                    Manifest.permission.READ_MEDIA_AUDIO,
+                    Manifest.permission.READ_PHONE_STATE
+                )
+            )
+
+            val launcher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestMultiplePermissions()
+            ) {
+                ringtoneListViewModel.permissionMap.value = it
+            }
+
+            // to launch permission dialog boxes
+            val lifecycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(
+                lifecycleOwner
+            ) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_START) {
+                        launcher.launch(
+                            arrayOf(
+                                Manifest.permission.READ_MEDIA_AUDIO,
+                                Manifest.permission.READ_PHONE_STATE
+                            )
+                        ) // launch
+                    }
+                }
+
+                // adding observer to lifecycle
+                lifecycleOwner.lifecycle.addObserver(observer)
+
+                // removing observer from lifecycle
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                }
+            }
+
+            RingtoneRandomizerTheme {
+                Scaffold(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    bottomBar = {
+                        if (isBottomNavBarVisible) {
+                            BottomNavBar(navController)
+                        }
+                    }
+                ) { padding ->
+                    NavHost(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = padding.calculateBottomPadding()),
+                        navController = navController,
+                        startDestination = Tab.Home.route
+                    ) {
+                        homeScreen(
+                            context = context,
+                            snackBarHostState = snackBarHostState,
+                            viewModel = ringtoneListViewModel,
+                            permissionMap = ringtoneListViewModel.permissionMap
+                        )
+
+                        aboutScreen(navController = navController)
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(callReceiver)
+    }
+}
