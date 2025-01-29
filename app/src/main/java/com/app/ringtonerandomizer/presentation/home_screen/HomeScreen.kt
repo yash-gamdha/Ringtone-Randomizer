@@ -134,7 +134,7 @@ fun HomeScreen(
                         )
                     ) {
                         Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.music),
+                            imageVector = ImageVector.vectorResource(R.drawable.twotone_music_note_24),
                             contentDescription = "App icon"
                         )
                     }
