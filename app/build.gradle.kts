@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.libs
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -69,11 +71,5 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     // lifecycle
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-
-    // to handle permissions
-    implementation("com.google.accompanist:accompanist-permissions:0.37.0")
-
-    // navigation
-    implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation(libs.androidx.lifecycle.runtime.compose)
 }

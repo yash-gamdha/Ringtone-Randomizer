@@ -1,4 +1,4 @@
-package com.app.ringtonerandomizer.presentation.about_screen.components
+package com.app.ringtonerandomizer.presentation.home_screen.components
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
