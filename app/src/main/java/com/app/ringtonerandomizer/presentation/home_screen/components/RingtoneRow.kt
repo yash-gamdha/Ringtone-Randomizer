@@ -10,11 +10,15 @@ import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,13 +28,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import com.app.ringtonerandomizer.R
 import com.app.ringtonerandomizer.core.data.GlobalVariables
 import com.app.ringtonerandomizer.core.domain.getRingtoneDuration
 import com.app.ringtonerandomizer.presentation.home_screen.ClickEvents
@@ -44,8 +51,9 @@ fun RingtoneRow(
     currentRingtone: String,
     context: Context,
     scope: CoroutineScope,
-    onDropDownClick: (ClickEvents) -> Unit,
-    index: Int
+    onClick: (ClickEvents) -> Unit,
+    index: Int,
+    isPlaying: Int // current ringtone index which is playing
 ) {
     // to show the menu
     var isContextMenuVisible by rememberSaveable {
@@ -83,6 +91,8 @@ fun RingtoneRow(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(start = 8.dp, end = 8.dp),
+        contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = Modifier
@@ -92,7 +102,6 @@ fun RingtoneRow(
                 .onSizeChanged {
                     itemHeight = with(density) { it.height.toDp() }
                 }
-                .padding(start = 8.dp, end = 8.dp)
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onLongPress = {
@@ -118,9 +127,35 @@ fun RingtoneRow(
                 modifier = Modifier
                     .fillMaxWidth(0.75f)
             )
-            Text(
-                text = getRingtoneDuration("${GlobalVariables.PATH}$ringtone")
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    text = getRingtoneDuration("${GlobalVariables.PATH}$ringtone")
+                )
+                IconButton(
+                    onClick = {
+                        if (isPlaying == index) {
+                            onClick(ClickEvents.PauseRingtone(ringtone, index))
+                        } else {
+                            onClick(ClickEvents.PlayRingtone(context, ringtone, index))
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(
+                            if (isPlaying == index) {
+                                R.drawable.pause
+                            } else R.drawable.play
+                        ),
+                        contentDescription = if (isPlaying == index) {
+                            "Pause button"
+                        } else "Play button"
+                    )
+                }
+            }
         }
         DropdownMenu(
             expanded = isContextMenuVisible,
@@ -140,7 +175,7 @@ fun RingtoneRow(
                         scope.launch {
                             isContextMenuVisible = false
                             delay(1000L)
-                            onDropDownClick(
+                            onClick(
                                 ClickEvents.DropDownClick(
                                     option = it,
                                     context = context,

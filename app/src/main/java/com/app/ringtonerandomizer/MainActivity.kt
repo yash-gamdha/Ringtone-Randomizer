@@ -21,6 +21,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -41,31 +42,23 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.auto(
-                Color.Transparent.toArgb(), Color.Transparent.toArgb()
-            ),
-            navigationBarStyle = SystemBarStyle.auto(
-                Color.Transparent.toArgb(), Color.Transparent.toArgb()
-            )
-        )
+        enableEdgeToEdge()
 
         callReceiver = IncomingCallReceiver()
         val intentFilter = IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
         registerReceiver(callReceiver, intentFilter)
 
         setContent {
-            val context = LocalContext.current
             val snackBarHostState = remember { SnackbarHostState() }
 
-            val ringtoneListViewModel = RingtoneListViewModel(context)
+            val ringtoneListViewModel = RingtoneListViewModel(this@MainActivity)
             ringtoneListViewModel.intentSenderLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartIntentSenderForResult()
             ) {
                 if (it.resultCode == RESULT_OK) {
-                    doToast(context, "deleted successfully")
+                    doToast(this@MainActivity, "deleted successfully")
                 } else {
-                    doToast(context, "Failed to delete")
+                    doToast(this@MainActivity, "Failed to delete")
                 }
             }
 
@@ -106,11 +99,14 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize(),
                     contentWindowInsets = WindowInsets(0,0,0,0)
                 ) { innerPadding ->
+                    val state by ringtoneListViewModel.state.collectAsStateWithLifecycle()
+                    val isPlaying by ringtoneListViewModel.isPlaying.collectAsStateWithLifecycle()
                     HomeScreen(
-                        state = ringtoneListViewModel.state.collectAsStateWithLifecycle().value,
-                        context = context,
+                        state = state,
+                        context = this@MainActivity,
                         onClick = ringtoneListViewModel::onClick,
                         snackBarHostState = snackBarHostState,
+                        isPlaying = isPlaying,
                         modifier = Modifier.padding(innerPadding),
                         permissionMap = ringtoneListViewModel.permissionMap
                     )

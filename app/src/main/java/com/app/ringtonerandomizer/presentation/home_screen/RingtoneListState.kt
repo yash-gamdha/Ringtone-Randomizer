@@ -7,6 +7,6 @@ typealias Ringtones = String
 @Immutable
 data class RingtoneListState(
     val isLoading: Boolean = false,
-    val ringtoneList: List<Ringtones> = emptyList(),
+    val ringtoneList: List<Ringtones>? = null,
     val currentRingtone: String? = null
 )

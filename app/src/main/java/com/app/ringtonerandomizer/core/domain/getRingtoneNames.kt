@@ -8,7 +8,11 @@ fun getRingtoneNames(): List<String>? {
     if (dir.exists()) {
         if (dir.isDirectory) {
             val list = dir.listFiles()?.filter { it.isFile }?.map { it.name }
-            return list
+            if (list != null) {
+                if (list.isNotEmpty()) {
+                    return list
+                }
+            }
         }
     }
     dir.mkdirs()
