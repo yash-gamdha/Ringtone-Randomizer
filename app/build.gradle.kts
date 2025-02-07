@@ -3,6 +3,7 @@ import org.gradle.kotlin.dsl.libs
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -14,7 +15,7 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -72,4 +73,10 @@ dependencies {
 
     // lifecycle
     implementation(libs.androidx.lifecycle.runtime.compose)
+
+    // datastore
+    implementation(libs.androidx.datastore)
+
+    // serialization
+    implementation(libs.kotlinx.serialization.json)
 }

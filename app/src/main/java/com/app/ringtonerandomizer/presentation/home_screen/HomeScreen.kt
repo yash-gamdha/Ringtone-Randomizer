@@ -54,6 +54,7 @@ import com.app.ringtonerandomizer.core.presentation.snackBarRequestPermission
 import com.app.ringtonerandomizer.permissions.checkBatteryOptimizationPermission
 import com.app.ringtonerandomizer.permissions.checkModifySettingsPermission
 import com.app.ringtonerandomizer.permissions.checkReadAudio
+import com.app.ringtonerandomizer.presentation.app_settings.AppSettingsBottomSheet
 import com.app.ringtonerandomizer.presentation.home_screen.components.AppInfoBottomSheet
 import com.app.ringtonerandomizer.presentation.home_screen.components.MessageComposable
 import com.app.ringtonerandomizer.presentation.home_screen.components.RingtoneList
@@ -72,10 +73,15 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
-    val sheetState = rememberModalBottomSheetState(
+    val appInfoSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
-    var isSheetVisible by rememberSaveable {
+    var isAppInfoSheetVisible by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    var settingsSheetState = rememberModalBottomSheetState()
+    var isSettingsSheetVisible by remember {
         mutableStateOf(false)
     }
 
@@ -138,12 +144,22 @@ fun HomeScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            isSheetVisible = true
+                            isAppInfoSheetVisible = true
                         }
                     ) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.info),
                             contentDescription = "App info"
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            isSettingsSheetVisible = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.settings),
+                            contentDescription = "Settings"
                         )
                     }
                 },
@@ -274,11 +290,20 @@ fun HomeScreen(
             }
         }
 
-        if (isSheetVisible) {
+        if (isAppInfoSheetVisible) {
             AppInfoBottomSheet(
-                sheetState = sheetState,
+                sheetState = appInfoSheetState,
                 context = context,
-                onDismiss = { isSheetVisible = false }
+                onDismiss = { isAppInfoSheetVisible = false }
+            )
+        }
+
+        if (isSettingsSheetVisible) {
+            AppSettingsBottomSheet(
+                sheetState = settingsSheetState,
+                context = context,
+                onClick = onClick,
+                onDismiss = { isSettingsSheetVisible = false }
             )
         }
     }

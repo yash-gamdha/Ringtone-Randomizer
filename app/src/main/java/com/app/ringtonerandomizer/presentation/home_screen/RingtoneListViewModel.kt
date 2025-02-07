@@ -3,14 +3,12 @@ package com.app.ringtonerandomizer.presentation.home_screen
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
-import android.os.Build
-import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.ringtonerandomizer.core.app_settings.dataStore
 import com.app.ringtonerandomizer.core.data.GlobalVariables
 import com.app.ringtonerandomizer.core.data.features.changeRingtone
 import com.app.ringtonerandomizer.core.data.features.addRingtones
@@ -49,8 +47,9 @@ class RingtoneListViewModel(
     private val _isPlaying = MutableStateFlow(-1) // current ringtone index which is playing
     val isPlaying = _isPlaying.asStateFlow()
     var mediaPlayer: MediaPlayer? = null
-    var currenPlayingRingtone: String = ""
+    var currentPlayingRingtone: String = ""
     var ringtonePlayingJob: Job? = null
+
 
     fun onClick(clickEvent: ClickEvents) {
         when (clickEvent) {
@@ -84,8 +83,8 @@ class RingtoneListViewModel(
             }
 
             is ClickEvents.PlayRingtone -> {
-                if (currenPlayingRingtone != clickEvent.ringtone) {
-                    currenPlayingRingtone = clickEvent.ringtone
+                if (currentPlayingRingtone != clickEvent.ringtone) {
+                    currentPlayingRingtone = clickEvent.ringtone
                     val ringtoneUri = getFileUri(
                         "${GlobalVariables.PATH}${clickEvent.ringtone}",
                         clickEvent.context
@@ -102,6 +101,10 @@ class RingtoneListViewModel(
             is ClickEvents.PauseRingtone -> {
                 pauseRingtone(mediaPlayer!!)
             }
+
+            is ClickEvents.UpdateSequentialRotationSetting -> {
+                updateSequentialRotationSetting(clickEvent.context, clickEvent.value)
+            }
         }
     }
 
@@ -115,11 +118,13 @@ class RingtoneListViewModel(
             _state.update {
                 it.copy(
                     isLoading = false,
-                    ringtoneList = list!!.sorted()
+                    ringtoneList = list!!.sortedWith { o1, o2 ->
+                        o1.compareTo(o2, ignoreCase = true)
+                    }
                 )
             }
             _isPlaying.update {
-                _state.value.ringtoneList!!.indexOf(currenPlayingRingtone)
+                _state.value.ringtoneList!!.indexOf(currentPlayingRingtone)
             }
         }
     }
@@ -171,7 +176,7 @@ class RingtoneListViewModel(
 
     private fun deleteSelectedRingtone(context: Context, ringtone: String) {
         viewModelScope.launch {
-            if (currenPlayingRingtone == ringtone) { // in case if current playing ringtone gets deleted
+            if (currentPlayingRingtone == ringtone) { // in case if current playing ringtone gets deleted
                 _isPlaying.update { -1 }
                 mediaPlayer?.release()
             }
@@ -193,5 +198,14 @@ class RingtoneListViewModel(
     private fun pauseRingtone(mediaPlayer: MediaPlayer) {
         _isPlaying.update { -1 }
         ringtonePlayingJob = viewModelScope.launch { mediaPlayer.pause() }
+    }
+
+    // to update settings
+    private fun updateSequentialRotationSetting(context: Context, value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.updateData {
+                it.copy(isSequentialRotationOn = value)
+            }
+        }
     }
 }

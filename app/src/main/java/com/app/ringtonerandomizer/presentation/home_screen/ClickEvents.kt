@@ -9,4 +9,5 @@ sealed interface ClickEvents {
     data class DropDownClick(val context: Context,val option: String, val ringtone: String): ClickEvents
     data class PlayRingtone(val context: Context, val ringtone: String, val index: Int): ClickEvents
     data class PauseRingtone(val ringtone: String, val index: Int): ClickEvents
+    data class UpdateSequentialRotationSetting(val context: Context, val value: Boolean): ClickEvents
 }
