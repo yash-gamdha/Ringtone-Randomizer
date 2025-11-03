@@ -27,7 +27,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.ringtonerandomizer.core.data.features.IncomingCallReceiver
 import com.app.ringtonerandomizer.core.presentation.doToast
-import com.app.ringtonerandomizer.presentation.new_ui.home_screen.HomeScreen
+import com.app.ringtonerandomizer.presentation.home_screen.HomeScreen
 import com.app.ringtonerandomizer.presentation.home_screen.RingtoneListViewModel
 import com.app.ringtonerandomizer.ui.theme.RingtoneRandomizerTheme
 

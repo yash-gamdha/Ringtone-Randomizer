@@ -2,7 +2,6 @@ package com.app.ringtonerandomizer.presentation.home_screen
 
 import android.Manifest
 import android.annotation.SuppressLint
-import com.app.ringtonerandomizer.R
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -12,18 +11,23 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
@@ -36,12 +40,12 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,6 +53,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import com.app.ringtonerandomizer.R
 import com.app.ringtonerandomizer.core.presentation.doToast
 import com.app.ringtonerandomizer.core.presentation.snackBarRequestPermission
 import com.app.ringtonerandomizer.permissions.checkBatteryOptimizationPermission
@@ -61,7 +66,7 @@ import com.app.ringtonerandomizer.presentation.home_screen.components.RingtoneLi
 
 @SuppressLint("BatteryLife")
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeScreen(
     state: RingtoneListState,
@@ -69,8 +74,7 @@ fun HomeScreen(
     snackBarHostState: SnackbarHostState,
     context: Context,
     isPlaying: Int,
-    permissionMap: MutableState<Map<String, Boolean>>,
-    modifier: Modifier = Modifier
+    permissionMap: MutableState<Map<String, Boolean>>
 ) {
     val scope = rememberCoroutineScope()
     val appInfoSheetState = rememberModalBottomSheetState(
@@ -80,7 +84,7 @@ fun HomeScreen(
         mutableStateOf(false)
     }
 
-    var settingsSheetState = rememberModalBottomSheetState()
+    val settingsSheetState = rememberModalBottomSheetState()
     var isSettingsSheetVisible by remember {
         mutableStateOf(false)
     }
@@ -107,12 +111,12 @@ fun HomeScreen(
     var readAudio by remember {
         mutableStateOf(checkReadAudio(context))
     }
-    while (readAudio == false) {
+    while (!readAudio) {
         readAudio = checkReadAudio(context)
     }
 
     // to manipulate value of "expanded"
-    var expanded = remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
+    val expanded = remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
 
     Scaffold(
         modifier = Modifier
@@ -214,22 +218,25 @@ fun HomeScreen(
                     expanded = expanded.value
                 )
             }
-        }
-    ) { padding ->
+        },
+        contentWindowInsets = WindowInsets.safeDrawing
+    ) { innerPadding ->
 
         if ((permissionMap.value[Manifest.permission.READ_MEDIA_AUDIO]) ?: readAudio) {
             if (state.ringtoneList == null) {
-                MessageComposable(
-                    message = "Loading...",
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding)
-                )
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LoadingIndicator()
+                }
             } else {
                 AnimatedContent(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding),
+                        .padding(innerPadding),
                     targetState = state,
                     label = "ringtone_list"
                 ) { state ->
@@ -238,7 +245,7 @@ fun HomeScreen(
                             message = "Click \"+ Add\" button to add ringtones",
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(padding)
+                                .padding(innerPadding)
                         )
                     } else {
                         RingtoneList(
@@ -259,7 +266,7 @@ fun HomeScreen(
                 message = "Please grant necessary permissions to see ringtone list",
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
+                    .padding(innerPadding)
             )
         }
         if (!modifySettings) {
