@@ -11,6 +11,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -116,7 +117,7 @@ fun HomeScreen(
     }
 
     // to manipulate value of "expanded"
-    val expanded = remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
+    val isShowingFAB by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
 
     Scaffold(
         modifier = Modifier
@@ -171,52 +172,55 @@ fun HomeScreen(
             )
         },
         floatingActionButton = {
-            Column(
-                horizontalAlignment = Alignment.End
+            AnimatedVisibility(
+                visible = isShowingFAB
             ) {
-                SmallFloatingActionButton(
-                    onClick = {
-                        if (modifySettings) {
-                            onClick(ClickEvents.ChangeRingtone(context))
-                        } else {
-                            doToast(
-                                context,
-                                "Modify settings permission is not allowed"
-                            )
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                Column(
+                    horizontalAlignment = Alignment.End
                 ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.random_icon),
-                        contentDescription = "Change ringtone randomly",
-                        modifier = Modifier.size(24.dp)
+                    SmallFloatingActionButton(
+                        onClick = {
+                            if (modifySettings) {
+                                onClick(ClickEvents.ChangeRingtone(context))
+                            } else {
+                                doToast(
+                                    context,
+                                    "Modify settings permission is not allowed"
+                                )
+                            }
+                        },
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.random_icon),
+                            contentDescription = "Change ringtone randomly",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    ExtendedFloatingActionButton(
+                        icon = {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.add_icon),
+                                contentDescription = "Add"
+                            )
+                        },
+                        text = {
+                            Text("Add")
+                        },
+                        onClick = {
+                            if (readAudio) {
+                                picker.launch(arrayOf("audio/*"))
+                            } else {
+                                doToast(
+                                    context = context,
+                                    message = "Please grant necessary storage permissions"
+                                )
+                            }
+                        }
                     )
                 }
-                Spacer(Modifier.height(16.dp))
-                ExtendedFloatingActionButton(
-                    icon = {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.add_icon),
-                            contentDescription = "Add"
-                        )
-                    },
-                    text = {
-                        Text("Add")
-                    },
-                    onClick = {
-                        if (readAudio) {
-                            picker.launch(arrayOf("audio/*"))
-                        } else {
-                            doToast(
-                                context = context,
-                                message = "Please grant necessary storage permissions"
-                            )
-                        }
-                    },
-                    expanded = expanded.value
-                )
             }
         },
         contentWindowInsets = WindowInsets.safeDrawing
@@ -254,9 +258,8 @@ fun HomeScreen(
                             currentRingtone = state.currentRingtone.toString(),
                             context = context,
                             onDropDownClick = onClick,
-                            scope = scope,
                             isPlaying = isPlaying,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize().padding(8.dp)
                         )
                     }
                 }
