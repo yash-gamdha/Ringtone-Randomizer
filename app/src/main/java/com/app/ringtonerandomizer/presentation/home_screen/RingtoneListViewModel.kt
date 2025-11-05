@@ -62,23 +62,19 @@ class RingtoneListViewModel(
                 addSelectedRingtones(clickEvent.listOfUri, clickEvent.context)
             }
 
-            is ClickEvents.DropDownClick -> {
-                when (clickEvent.option) {
-                    "Set as ringtone" -> {
-                        changeToSelectedRingtone(clickEvent.context, clickEvent.ringtone)
-                        updateCurrentRingtone(context = clickEvent.context)
-                    }
+            is ClickEvents.SetRingtone -> {
+                changeToSelectedRingtone(clickEvent.context, clickEvent.ringtone)
+                updateCurrentRingtone(clickEvent.context)
+            }
 
-                    "Delete" -> {
-                        if (clickEvent.ringtone == _state.value.currentRingtone) {
-                            doToast(
-                                clickEvent.context,
-                                "Cannot delete current ringtone"
-                            )
-                        } else {
-                            deleteSelectedRingtone(clickEvent.context, clickEvent.ringtone)
-                        }
-                    }
+            is ClickEvents.DeleteRingtone -> {
+                if (clickEvent.ringtone == _state.value.currentRingtone) {
+                    doToast(
+                        clickEvent.context,
+                        "Cannot delete current ringtone"
+                    )
+                } else {
+                    deleteSelectedRingtone(clickEvent.context, clickEvent.ringtone)
                 }
             }
 
