@@ -14,7 +14,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.DisposableEffect
@@ -94,16 +93,15 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize(),
                     contentWindowInsets = WindowInsets(0,0,0,0)
-                ) { innerPadding ->
+                ) { _ ->
                     val state by ringtoneListViewModel.state.collectAsStateWithLifecycle()
-                    val isPlaying by ringtoneListViewModel.isPlaying.collectAsStateWithLifecycle()
                     HomeScreen(
                         state = state,
                         context = this@MainActivity,
                         onClick = ringtoneListViewModel::onClick,
                         snackBarHostState = snackBarHostState,
-                        isPlaying = isPlaying,
-                        permissionMap = ringtoneListViewModel.permissionMap
+                        permissionMap = ringtoneListViewModel.permissionMap,
+                        ringtoneListViewModel = ringtoneListViewModel
                     )
                 }
             }
