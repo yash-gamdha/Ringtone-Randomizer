@@ -3,6 +3,7 @@ package com.app.ringtonerandomizer.presentation.home_screen
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
+import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +47,7 @@ class RingtoneListViewModel(
 
     private val _isPlaying = MutableStateFlow(-1) // current ringtone index which is playing
     val isPlaying = _isPlaying.asStateFlow()
-    var mediaPlayer: MediaPlayer? = null
+    var mediaPlayer = MediaPlayer()
     var currentPlayingRingtone: String = ""
     var ringtonePlayingJob: Job? = null
 
@@ -86,16 +87,17 @@ class RingtoneListViewModel(
                         clickEvent.context
                     )
 
-                    mediaPlayer?.release()
-                    mediaPlayer = MediaPlayer.create(clickEvent.context, ringtoneUri)
+                    mediaPlayer.reset()
+                    mediaPlayer.setDataSource(clickEvent.context, ringtoneUri)
+                    mediaPlayer.prepare()
 
                     ringtonePlayingJob?.cancel()
                 }
-                playRingtone(mediaPlayer!!, clickEvent.index)
+                playRingtone(clickEvent.index)
             }
 
             is ClickEvents.PauseRingtone -> {
-                pauseRingtone(mediaPlayer!!)
+                pauseRingtone()
             }
 
             is ClickEvents.UpdateSequentialRotationSetting -> {
@@ -174,7 +176,7 @@ class RingtoneListViewModel(
         viewModelScope.launch {
             if (currentPlayingRingtone == ringtone) { // in case if current playing ringtone gets deleted
                 _isPlaying.update { -1 }
-                mediaPlayer?.release()
+                mediaPlayer.reset()
             }
             if (deleteRingtone(context, ringtone, intentSenderLauncher)) {
                 doToast(
@@ -186,14 +188,17 @@ class RingtoneListViewModel(
         }
     }
 
-    private fun playRingtone(mediaPlayer: MediaPlayer, index: Int) {
+    private fun playRingtone(index: Int) {
         _isPlaying.update { index }
         ringtonePlayingJob = viewModelScope.launch { mediaPlayer.start() }
     }
 
-    private fun pauseRingtone(mediaPlayer: MediaPlayer) {
+    private fun pauseRingtone() {
         _isPlaying.update { -1 }
-        ringtonePlayingJob = viewModelScope.launch { mediaPlayer.pause() }
+        ringtonePlayingJob = viewModelScope.launch {
+            Log.d("Start", "$mediaPlayer")
+            mediaPlayer.pause()
+        }
     }
 
     // to update settings
