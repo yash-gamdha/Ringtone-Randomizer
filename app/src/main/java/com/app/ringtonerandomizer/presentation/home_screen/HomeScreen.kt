@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.app.ringtonerandomizer.R
 import com.app.ringtonerandomizer.core.presentation.doToast
 import com.app.ringtonerandomizer.core.presentation.snackBarRequestPermission
@@ -74,7 +75,7 @@ fun HomeScreen(
     onClick: (ClickEvents) -> Unit,
     snackBarHostState: SnackbarHostState,
     context: Context,
-    isPlaying: Int,
+    ringtoneListViewModel: RingtoneListViewModel,
     permissionMap: MutableState<Map<String, Boolean>>
 ) {
     val scope = rememberCoroutineScope()
@@ -234,7 +235,9 @@ fun HomeScreen(
                         .padding(innerPadding),
                     contentAlignment = Alignment.Center
                 ) {
-                    LoadingIndicator()
+                    LoadingIndicator(
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             } else {
                 AnimatedContent(
@@ -258,7 +261,7 @@ fun HomeScreen(
                             currentRingtone = state.currentRingtone.toString(),
                             context = context,
                             onDropDownClick = onClick,
-                            isPlaying = isPlaying,
+                            ringtoneListViewModel = ringtoneListViewModel,
                             modifier = Modifier.fillMaxSize().padding(8.dp)
                         )
                     }
@@ -293,7 +296,7 @@ fun HomeScreen(
             ) {
                 val intent =
                     Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                        data = Uri.parse("package:${context.packageName}")
+                        data = "package:${context.packageName}".toUri()
                     }
                 context.startActivity(intent)
                 batteryOptimization = checkBatteryOptimizationPermission(context)

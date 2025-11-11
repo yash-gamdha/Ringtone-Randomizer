@@ -2,7 +2,6 @@ package com.app.ringtonerandomizer.presentation.home_screen.components
 
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -37,10 +36,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.ringtonerandomizer.R
 import com.app.ringtonerandomizer.core.data.GlobalVariables
 import com.app.ringtonerandomizer.core.domain.getRingtoneDuration
 import com.app.ringtonerandomizer.presentation.home_screen.ClickEvents
+import com.app.ringtonerandomizer.presentation.home_screen.RingtoneListViewModel
 import com.app.ringtonerandomizer.ui.theme.RingtoneRandomizerTheme
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -51,9 +52,10 @@ fun RingtoneRow(
     context: Context,
     onClick: (ClickEvents) -> Unit,
     index: Int,
-    isPlaying: Int, // current ringtone index which is playing
+    ringtoneListViewModel: RingtoneListViewModel,
     modifier: Modifier = Modifier
 ) {
+    val isPlaying by ringtoneListViewModel.isPlaying.collectAsStateWithLifecycle()
     var isExpanded by remember {
         mutableStateOf(false)
     }
@@ -79,7 +81,7 @@ fun RingtoneRow(
     val animationProgress by animateFloatAsState(
         targetValue = rotateValue,
         label = "toggle_play_pause",
-        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec()
+        animationSpec = MaterialTheme.motionScheme.slowSpatialSpec()
     )
 
     val playPauseIconVector by derivedStateOf {
@@ -180,7 +182,7 @@ private fun RingtoneRowPreview() {
             context = LocalContext.current,
             onClick = { },
             index = 1,
-            isPlaying = -1,
+            ringtoneListViewModel = RingtoneListViewModel(LocalContext.current),
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))

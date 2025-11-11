@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.app.ringtonerandomizer.presentation.home_screen.ClickEvents
+import com.app.ringtonerandomizer.presentation.home_screen.RingtoneListViewModel
 
 @Composable
 fun RingtoneList(
@@ -18,7 +19,7 @@ fun RingtoneList(
     currentRingtone: String,
     state: LazyListState,
     context: Context,
-    isPlaying: Int,
+    ringtoneListViewModel: RingtoneListViewModel,
     onDropDownClick: (ClickEvents) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -37,7 +38,7 @@ fun RingtoneList(
                 index = index,
                 context = context,
                 onClick = onDropDownClick,
-                isPlaying = isPlaying,
+                ringtoneListViewModel = ringtoneListViewModel,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
