@@ -11,6 +11,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -193,7 +197,9 @@ fun HomeScreen(
         },
         floatingActionButton = {
             AnimatedVisibility(
-                visible = isShowingFAB
+                visible = isShowingFAB,
+                enter = slideInVertically(animationSpec = MaterialTheme.motionScheme.fastSpatialSpec()) { it } + fadeIn(),
+                exit = slideOutVertically(animationSpec = MaterialTheme.motionScheme.fastSpatialSpec()) { it } + fadeOut()
             ) {
                 Column(
                     horizontalAlignment = Alignment.End
