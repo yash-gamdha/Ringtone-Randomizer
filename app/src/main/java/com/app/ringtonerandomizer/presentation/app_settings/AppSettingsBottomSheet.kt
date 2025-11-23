@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Switch
@@ -25,7 +26,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.ringtonerandomizer.core.app_settings.AppSettings
 import com.app.ringtonerandomizer.core.app_settings.dataStore
-import com.app.ringtonerandomizer.core.data.GlobalVariables
 import com.app.ringtonerandomizer.presentation.home_screen.ClickEvents
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,7 +84,10 @@ fun AppSettingsBottomSheet(
                             onClick(ClickEvents.UpdateSequentialRotationSetting(context, value))
                         }
                     )
-                }
+                },
+                colors = ListItemDefaults.colors(
+                    containerColor = BottomSheetDefaults.ContainerColor
+                )
             )
         }
         Spacer(Modifier.height(48.dp))
