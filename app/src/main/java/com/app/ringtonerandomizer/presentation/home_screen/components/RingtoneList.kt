@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -28,12 +29,13 @@ fun RingtoneList(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         state = state
     ) {
-        items(
-            ringtones.size,
-            key = { it }
-        ) { index ->
+        itemsIndexed(
+            items = ringtones,
+            key = { _, item -> item },
+            contentType = { _, _ -> "ringtone_row" }
+        ) { index, ringtone ->
             RingtoneRow(
-                ringtone = ringtones[index],
+                ringtone = ringtone,
                 currentRingtone = currentRingtone,
                 index = index,
                 context = context,
