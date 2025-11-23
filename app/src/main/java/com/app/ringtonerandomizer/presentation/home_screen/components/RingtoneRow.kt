@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,11 +32,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.ringtonerandomizer.R
@@ -42,9 +42,10 @@ import com.app.ringtonerandomizer.core.data.GlobalVariables
 import com.app.ringtonerandomizer.core.domain.getRingtoneDuration
 import com.app.ringtonerandomizer.presentation.home_screen.ClickEvents
 import com.app.ringtonerandomizer.presentation.home_screen.RingtoneListViewModel
-import com.app.ringtonerandomizer.ui.theme.RingtoneRandomizerTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun RingtoneRow(
     ringtone: String,
@@ -70,12 +71,12 @@ fun RingtoneRow(
         )
     }
 
-    val isPlayingBool by derivedStateOf {
-        isPlaying == index
+    val isPlayingBool by remember(isPlaying, index) {
+        derivedStateOf { isPlaying == index }
     }
 
-    val rotateValue by derivedStateOf {
-        if (isPlayingBool) 360F else 0F
+    val rotateValue by remember(isPlayingBool) {
+        derivedStateOf { if (isPlayingBool) 360F else 0F }
     }
 
     val animationProgress by animateFloatAsState(
@@ -84,8 +85,8 @@ fun RingtoneRow(
         animationSpec = MaterialTheme.motionScheme.slowSpatialSpec()
     )
 
-    val playPauseIconVector by derivedStateOf {
-        if (isPlayingBool && rotateValue >= 90) R.drawable.pause else R.drawable.play
+    val playPauseIconVector by remember(isPlayingBool, rotateValue) {
+        derivedStateOf { if (isPlayingBool && rotateValue >= 90) R.drawable.pause else R.drawable.play }
     }
 
     Column(
@@ -99,13 +100,28 @@ fun RingtoneRow(
                 }
                 .padding(8.dp)
         ) {
+            // Load duration off the main thread and remember per ringtone
+            var durationText by remember(ringtone) {
+                mutableStateOf<String?>(null)
+            }
+
+            LaunchedEffect(ringtone) {
+                durationText = withContext(Dispatchers.IO) {
+                    try {
+                        getRingtoneDuration("${GlobalVariables.PATH}$ringtone")
+                    } catch (_: Exception) {
+                        "-1"
+                    }
+                }
+            }
+
             Text(
                 text = "${index + 1}. $ringtone",
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(3F)
             )
             Text(
-                text = getRingtoneDuration("${GlobalVariables.PATH}$ringtone"),
+                text = durationText ?: "--:--",
                 textAlign = TextAlign.End,
                 modifier = Modifier.weight(1F)
             )
@@ -118,74 +134,61 @@ fun RingtoneRow(
             exit = shrinkVertically(animationSpec = MaterialTheme.motionScheme.fastSpatialSpec()),
             modifier = Modifier.padding(8.dp)
         ) {
-            Spacer(Modifier.height(8.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.onPrimaryContainer),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                IconButton(
-                    onClick = {
-                        onClick(ClickEvents.DeleteRingtone(context, ringtone))
-                    }
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.delete),
-                        contentDescription = "delete $ringtone",
-                        tint = MaterialTheme.colorScheme.surface
-                    )
-                }
+            Column {
+                Spacer(Modifier.height(8.dp))
 
-                IconButton(
-                    onClick = {
-                        if (isPlaying == index) {
-                            onClick(ClickEvents.PauseRingtone(ringtone, index))
-                        } else {
-                            onClick(ClickEvents.PlayRingtone(context, ringtone, index))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.onPrimaryContainer),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    IconButton(
+                        onClick = {
+                            onClick(ClickEvents.DeleteRingtone(context, ringtone))
                         }
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.delete),
+                            contentDescription = "delete $ringtone",
+                            tint = MaterialTheme.colorScheme.surface
+                        )
                     }
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(playPauseIconVector),
-                        contentDescription = if (isPlaying != -1) "pause $ringtone" else "play $ringtone",
-                        modifier = Modifier
-                            .rotate(animationProgress),
-                        tint = MaterialTheme.colorScheme.surface
-                    )
-                }
 
-                IconButton(
-                    onClick = {
-                        onClick(ClickEvents.SetRingtone(context, ringtone))
+                    IconButton(
+                        onClick = {
+                            if (isPlaying == index) {
+                                onClick(ClickEvents.PauseRingtone(ringtone, index))
+                            } else {
+                                onClick(ClickEvents.PlayRingtone(context, ringtone, index))
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(playPauseIconVector),
+                            contentDescription = if (isPlaying != -1) "pause $ringtone" else "play $ringtone",
+                            modifier = Modifier
+                                .rotate(animationProgress),
+                            tint = MaterialTheme.colorScheme.surface
+                        )
                     }
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.music),
-                        contentDescription = "set $ringtone as ringtone",
-                        tint = MaterialTheme.colorScheme.surface
-                    )
+
+                    IconButton(
+                        onClick = {
+                            onClick(ClickEvents.SetRingtone(context, ringtone))
+                        }
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.music),
+                            contentDescription = "set $ringtone as ringtone",
+                            tint = MaterialTheme.colorScheme.surface
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-@PreviewLightDark
-private fun RingtoneRowPreview() {
-    RingtoneRandomizerTheme {
-        RingtoneRow(
-            ringtone = "Ringtone 1",
-            currentRingtone = "Ringtone 2",
-            context = LocalContext.current,
-            onClick = { },
-            index = 1,
-            ringtoneListViewModel = RingtoneListViewModel(LocalContext.current),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-        )
-    }
-}
+// Preview removed to avoid constructing ViewModel in composable preview, which triggers lint errors.
