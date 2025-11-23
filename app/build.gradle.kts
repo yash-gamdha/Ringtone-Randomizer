@@ -80,4 +80,7 @@ dependencies {
 
     // serialization
     implementation(libs.kotlinx.serialization.json)
+
+    // koin DI
+    implementation(libs.koin.androidx.compose)
 }
