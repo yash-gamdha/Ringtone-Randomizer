@@ -29,6 +29,7 @@ import com.app.ringtonerandomizer.core.presentation.doToast
 import com.app.ringtonerandomizer.presentation.home_screen.HomeScreen
 import com.app.ringtonerandomizer.presentation.home_screen.RingtoneListViewModel
 import com.app.ringtonerandomizer.ui.theme.RingtoneRandomizerTheme
+import org.koin.androidx.compose.koinViewModel
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @SuppressLint("BatteryLife")
@@ -46,7 +47,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val snackBarHostState = remember { SnackbarHostState() }
 
-            val ringtoneListViewModel = RingtoneListViewModel(this@MainActivity)
+            val ringtoneListViewModel = koinViewModel<RingtoneListViewModel>()
             ringtoneListViewModel.intentSenderLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartIntentSenderForResult()
             ) {
