@@ -10,7 +10,6 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,13 +21,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
@@ -39,6 +38,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -55,6 +56,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.app.ringtonerandomizer.R
 import com.app.ringtonerandomizer.core.presentation.doToast
 import com.app.ringtonerandomizer.core.presentation.snackBarRequestPermission
@@ -79,6 +83,7 @@ fun HomeScreen(
     permissionMap: MutableState<Map<String, Boolean>>
 ) {
     val scope = rememberCoroutineScope()
+
     val appInfoSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
@@ -119,6 +124,20 @@ fun HomeScreen(
 
     // to manipulate value of "expanded"
     val isShowingFAB by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
+
+    // Re-check special permissions when user returns from Settings screens
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // Update flags based on the latest system state
+                modifySettings = checkModifySettingsPermission(context)
+                batteryOptimization = checkBatteryOptimizationPermission(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -235,36 +254,31 @@ fun HomeScreen(
                         .padding(innerPadding),
                     contentAlignment = Alignment.Center
                 ) {
-                    LoadingIndicator(
-                        modifier = Modifier.size(24.dp)
+                    ContainedLoadingIndicator(
+                        modifier = Modifier.size(60.dp)
                     )
                 }
             } else {
-                AnimatedContent(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    targetState = state,
-                    label = "ringtone_list"
-                ) { state ->
-                    if (state.ringtoneList!!.isEmpty()) {
-                        MessageComposable(
-                            message = "Click \"+ Add\" button to add ringtones",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding)
-                        )
-                    } else {
-                        RingtoneList(
-                            ringtones = state.ringtoneList,
-                            state = listState,
-                            currentRingtone = state.currentRingtone.toString(),
-                            context = context,
-                            onDropDownClick = onClick,
-                            ringtoneListViewModel = ringtoneListViewModel,
-                            modifier = Modifier.fillMaxSize().padding(8.dp)
-                        )
-                    }
+                if (state.ringtoneList.isEmpty()) {
+                    MessageComposable(
+                        message = "Click \"+ Add\" button to add ringtones",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    )
+                } else {
+                    RingtoneList(
+                        ringtones = state.ringtoneList,
+                        state = listState,
+                        currentRingtone = state.currentRingtone.toString(),
+                        context = context,
+                        onDropDownClick = onClick,
+                        ringtoneListViewModel = ringtoneListViewModel,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .padding(8.dp)
+                    )
                 }
             }
         } else {
@@ -275,31 +289,31 @@ fun HomeScreen(
                     .padding(innerPadding)
             )
         }
-        if (!modifySettings) {
-            snackBarRequestPermission(
-                scope = scope,
-                permission = "Modify system settings",
-                snackBarHostState = snackBarHostState
-            ) {
-                val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
-                    data = Uri.fromParts("package", context.packageName, null)
+        // Show snackbars only when state is false, and trigger once per state change
+        LaunchedEffect(modifySettings, batteryOptimization) {
+            if (!modifySettings) {
+                snackBarRequestPermission(
+                    scope = scope,
+                    permission = "Modify system settings",
+                    snackBarHostState = snackBarHostState
+                ) {
+                    val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    context.startActivity(intent)
                 }
-                context.startActivity(intent)
-                modifySettings = checkModifySettingsPermission(context)
             }
-        }
-        if (!batteryOptimization) {
-            snackBarRequestPermission(
-                scope = scope,
-                permission = "Disable Battery Optimization",
-                snackBarHostState = snackBarHostState
-            ) {
-                val intent =
-                    Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            if (!batteryOptimization) {
+                snackBarRequestPermission(
+                    scope = scope,
+                    permission = "Disable Battery Optimization",
+                    snackBarHostState = snackBarHostState
+                ) {
+                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                         data = "package:${context.packageName}".toUri()
                     }
-                context.startActivity(intent)
-                batteryOptimization = checkBatteryOptimizationPermission(context)
+                    context.startActivity(intent)
+                }
             }
         }
 
