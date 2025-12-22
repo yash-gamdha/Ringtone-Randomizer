@@ -39,4 +39,4 @@ object AppSettingsSerializer: Serializer<AppSettings> {
         get() = AppSettings()
 }
 
-val Context.dataStore by dataStore(GlobalVariables.APPSETTINGSPATH, AppSettingsSerializer)
+val Context.dataStore by dataStore(GlobalVariables.APP_SETTINGS_PATH, AppSettingsSerializer)

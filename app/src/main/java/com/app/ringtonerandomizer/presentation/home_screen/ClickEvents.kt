@@ -11,4 +11,6 @@ sealed interface ClickEvents {
     data class SetRingtone(val context: Context, val ringtone: String): ClickEvents
     data class DeleteRingtone(val context: Context, val ringtone: String): ClickEvents
     data class UpdateSequentialRotationSetting(val context: Context, val value: Boolean): ClickEvents
+
+    data class UpdateShowNotificationsSetting(val context: Context, val value: Boolean): ClickEvents
 }

@@ -103,6 +103,10 @@ class RingtoneListViewModel(
             is ClickEvents.UpdateSequentialRotationSetting -> {
                 updateSequentialRotationSetting(clickEvent.context, clickEvent.value)
             }
+
+            is ClickEvents.UpdateShowNotificationsSetting -> {
+                updateShowNotificationSetting(clickEvent.context, clickEvent.value)
+            }
         }
     }
 
@@ -206,6 +210,14 @@ class RingtoneListViewModel(
         viewModelScope.launch {
             context.dataStore.updateData {
                 it.copy(isSequentialRotationOn = value)
+            }
+        }
+    }
+
+    private fun updateShowNotificationSetting(context: Context, value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.updateData {
+                it.copy(showNotifications = value)
             }
         }
     }
