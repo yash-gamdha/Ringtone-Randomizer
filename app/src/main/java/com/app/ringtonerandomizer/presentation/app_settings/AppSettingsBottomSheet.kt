@@ -109,11 +109,24 @@ fun AppSettingsBottomSheet(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             ListItemForAppSetting(
+                headingText = "Toggle Service",
+                supportingText = "Use the app as only ringtone selector, the app will stop randomizing on per call.",
+                trailingContent = {
+                    Switch(
+                        checked = appSettings.serviceOn,
+                        onCheckedChange = { value ->
+                            onClick(ClickEvents.UpdateServiceSettings(context, value))
+                        }
+                    )
+                }
+            )
+            ListItemForAppSetting(
                 headingText = "Sequential rotation",
                 supportingText = "Change ringtone sequentially or randomly after incoming call",
                 trailingContent = {
                     Switch(
                         checked = appSettings.isSequentialRotationOn,
+                        enabled = appSettings.serviceOn,
                         onCheckedChange = { value ->
                             onClick(ClickEvents.UpdateSequentialRotationSetting(context, value))
                         }

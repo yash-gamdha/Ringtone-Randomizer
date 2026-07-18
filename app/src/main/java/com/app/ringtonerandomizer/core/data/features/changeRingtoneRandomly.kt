@@ -41,32 +41,36 @@ fun changeRingtone(context: Context) {
 
         CoroutineScope(Dispatchers.IO).launch {
             context.dataStore.data.collect {
-                val isNotificationPermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    checkNotificationPermission(context)
-                } else true
+                if (it.serviceOn) {
 
-                if (it.isSequentialRotationOn) {
-                    val index =
-                        (listOfRingtones.indexOf(currentRingtone) + 1) % listOfRingtones.size
-                    val randomRingtone = listOfRingtones[index]
+                    val isNotificationPermissionGranted =
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            checkNotificationPermission(context)
+                        } else true
 
-                    changeRingtone(context, randomRingtone)
-                    CurrentRingtoneNotificationService(context).showNotification(
-                        contentText = "Ringtone changed to $randomRingtone",
-                        shouldShowNotification = isNotificationPermissionGranted && it.showNotifications
-                    )
-                    exitProcess(0)
-                } else {
-                    var randomRingtone = listOfRingtones[Random.nextInt(listOfRingtones.size)]
+                    if (it.isSequentialRotationOn) {
+                        val index =
+                            (listOfRingtones.indexOf(currentRingtone) + 1) % listOfRingtones.size
+                        val randomRingtone = listOfRingtones[index]
 
-                    while (randomRingtone == currentRingtone) {
-                        randomRingtone = listOfRingtones[Random.nextInt(listOfRingtones.size)]
+                        changeRingtone(context, randomRingtone)
+                        CurrentRingtoneNotificationService(context).showNotification(
+                            contentText = "Ringtone changed to $randomRingtone",
+                            shouldShowNotification = isNotificationPermissionGranted && it.showNotifications
+                        )
+                        exitProcess(0)
+                    } else {
+                        var randomRingtone = listOfRingtones[Random.nextInt(listOfRingtones.size)]
+
+                        while (randomRingtone == currentRingtone) {
+                            randomRingtone = listOfRingtones[Random.nextInt(listOfRingtones.size)]
+                        }
+                        changeRingtone(context, randomRingtone)
+                        CurrentRingtoneNotificationService(context).showNotification(
+                            contentText = "Ringtone changed to $randomRingtone",
+                            shouldShowNotification = isNotificationPermissionGranted && it.showNotifications
+                        )
                     }
-                    changeRingtone(context, randomRingtone)
-                    CurrentRingtoneNotificationService(context).showNotification(
-                        contentText = "Ringtone changed to $randomRingtone",
-                        shouldShowNotification = isNotificationPermissionGranted && it.showNotifications
-                    )
                 }
             }
         }

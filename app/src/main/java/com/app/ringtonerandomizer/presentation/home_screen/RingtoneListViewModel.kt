@@ -107,6 +107,10 @@ class RingtoneListViewModel(
             is ClickEvents.UpdateShowNotificationsSetting -> {
                 updateShowNotificationSetting(clickEvent.context, clickEvent.value)
             }
+
+            is ClickEvents.UpdateServiceSettings -> {
+                updateServiceSettings(clickEvent.context, clickEvent.value)
+            }
         }
     }
 
@@ -218,6 +222,14 @@ class RingtoneListViewModel(
         viewModelScope.launch {
             context.dataStore.updateData {
                 it.copy(showNotifications = value)
+            }
+        }
+    }
+
+    private fun updateServiceSettings(context: Context, value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.updateData {
+                it.copy(serviceOn = value)
             }
         }
     }
